@@ -1,8 +1,8 @@
 <?php
 	
-	pcntl_signal( SIGCHLD, SIG_IGN );
+	//pcntl_signal( SIGCHLD, SIG_IGN );
 	
-	$l_ip = '192.168.31.37';
+	$l_ip = '127.0.0.1';
 	$l_port = 2015;
 	
 	$sock = socket_create( AF_INET, SOCK_STREAM, 0 );
@@ -24,7 +24,9 @@
 
     while(TRUE) {
 		$read = $clients;
-        if( socket_select($read, $write=NULL, $except=NULL, NULL) < 1 )
+		$write=NULL;
+		$except=NULL;
+        if( socket_select($read, $write, $except, NULL) < 1 )
             continue;
 		
         if( in_array($sock, $read) ) {

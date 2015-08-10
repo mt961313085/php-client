@@ -4,9 +4,9 @@
 	
 	//pcntl_signal( SIGCHLD, SIG_IGN );
 	
-	$l_ip = '192.168.31.15';
-	$l_port =2023;
-	
+	$l_ip = '192.168.21.4';
+	$l_port = 2023;
+						
 	while(TRUE) {
 		
 		$sock = socket_create( AF_INET, SOCK_STREAM, 0 );
@@ -19,8 +19,9 @@
 			exit;
 		}
 	
-		$res = socket_connect ( $sock , $l_ip, $l_port );
+		$res = socket_connect( $sock , $l_ip, $l_port );
 		if($res===FALSE) {
+			echo "connection timeout\r\n";
 			sleep( 3 );
 			continue;
 		}
@@ -36,9 +37,7 @@
 					
 		while(TRUE) {
 			$read = $conns;
-			$write=NULL;
-			$except=NULL;
-			$sele_res = socket_select( $read, $write, $except, 10 );
+			$sele_res = socket_select( $read, $write=NULL, $except=NULL, 10 );
 			if( FALSE===$sele_res )	{	
 				socket_close( $conns[0] );
 				break;
@@ -50,8 +49,21 @@
 					break;
 				}
 				else {
-					if( !empty($data) )
-						echo "recv:  ".time()."    $data\r\n";
+					if( !empty($data) ) {
+						$mid_data = $data;
+						strtok( $mid_data , "[,] \r\n" );
+						$op_id = strtok ( "[,] \r\n" );
+						
+						if( $op_id==2 ) {
+							$str = strtok ( "[,] \r\n" );
+		
+							$buff = "[001,3,$str]";
+							echo "recv:  ".time()."    $data     send: $buff\r\n";
+							socket_write( $read[0], $buff );
+						}
+						else
+							echo "recv:  ".time()."   $data\r\n";
+					}
 					else {
 						echo "server connection_aborted\r\n";
 						socket_close( $read[0] );
@@ -65,6 +77,7 @@
 			// 发送心跳
 			if ( (time()-$jump_heart_t)>=10 ) {
 				$buff = "[001,6,0000c]";
+				echo "\t\t\t\t\tsend heart-jump: $buff \r\n";
 				$mid_res = socket_write( $sock, $buff );
 				$jump_heart_t = time();
 				if( $mid_res===FALSE ) {
